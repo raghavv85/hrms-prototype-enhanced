@@ -1,4 +1,38 @@
 import React, { useState, useEffect } from 'react';
+import {
+  Box,
+  Grid,
+  Card,
+  CardContent,
+  Typography,
+  CircularProgress,
+  Alert,
+  Paper,
+  Avatar,
+  Button,
+  Chip,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Divider,
+  IconButton,
+  Tooltip
+} from '@mui/material';
+import {
+  People as PeopleIcon,
+  PersonAdd as PersonAddIcon,
+  AccessTime as AccessTimeIcon,
+  TrendingUp as TrendingUpIcon,
+  Payment as PaymentIcon,
+  Assessment as AssessmentIcon,
+  Upload as UploadIcon,
+  Calculate as CalculateIcon,
+  Refresh as RefreshIcon
+} from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { 
   AttendanceChart, 
@@ -11,6 +45,7 @@ const Dashboard = ({ user }) => {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchDashboardData();
@@ -28,160 +63,353 @@ const Dashboard = ({ user }) => {
     }
   };
 
+  const handleRefresh = () => {
+    setLoading(true);
+    setError('');
+    fetchDashboardData();
+  };
+
   if (loading) {
     return (
-      <div className="loading-container">
-        <div className="loading-spinner"></div>
-        <p>Loading dashboard...</p>
-      </div>
+      <Box
+        display="flex"
+        flexDirection="column"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="60vh"
+      >
+        <CircularProgress size={60} sx={{ mb: 2 }} />
+        <Typography variant="h6" color="text.secondary">
+          Loading dashboard...
+        </Typography>
+      </Box>
     );
   }
 
   if (error) {
     return (
-      <div className="alert alert-error">
+      <Alert 
+        severity="error" 
+        sx={{ borderRadius: 2 }}
+        action={
+          <Button color="inherit" size="small" onClick={handleRefresh}>
+            Retry
+          </Button>
+        }
+      >
         {error}
-      </div>
+      </Alert>
     );
   }
 
   const { dashboard } = dashboardData || {};
 
+  const statCards = [
+    {
+      title: 'Total Employees',
+      value: dashboard?.employees?.total || 0,
+      icon: <PeopleIcon />,
+      color: 'primary',
+      bgColor: 'rgba(25, 118, 210, 0.1)'
+    },
+    {
+      title: 'Active Employees',
+      value: dashboard?.employees?.active || 0,
+      icon: <PersonAddIcon />,
+      color: 'success',
+      bgColor: 'rgba(76, 175, 80, 0.1)'
+    },
+    {
+      title: 'Average Attendance',
+      value: `${dashboard?.attendance?.averageAttendance || 0}%`,
+      icon: <AccessTimeIcon />,
+      color: 'info',
+      bgColor: 'rgba(33, 150, 243, 0.1)'
+    },
+    {
+      title: 'Avg Quality Score',
+      value: dashboard?.performance?.averageQualityScore || 0,
+      icon: <TrendingUpIcon />,
+      color: 'warning',
+      bgColor: 'rgba(255, 152, 0, 0.1)'
+    }
+  ];
+
+  const quickActions = [
+    ...(user.role === 'HR_ADMIN' ? [
+      { label: 'Add Employee', path: '/employees', icon: <PersonAddIcon />, color: 'primary' },
+      { label: 'Upload Attendance', path: '/attendance', icon: <UploadIcon />, color: 'secondary' },
+      { label: 'Add Performance', path: '/performance', icon: <TrendingUpIcon />, color: 'success' },
+      { label: 'Calculate Payroll', path: '/payroll', icon: <CalculateIcon />, color: 'primary' }
+    ] : []),
+    { label: 'Generate Reports', path: '/reports', icon: <AssessmentIcon />, color: 'info' }
+  ];
+
   return (
-    <div>
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <h1>Dashboard</h1>
-        <div className="text-right">
-          <small>Welcome back, {user.username}!</small><br />
-          <small>Period: {dashboardData?.period}</small>
-        </div>
-      </div>
+    <Box>
+      {/* Header */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Box>
+          <Typography variant="h4" fontWeight="bold" gutterBottom>
+            Dashboard
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Welcome back, {user.username}! • Period: {dashboardData?.period}
+          </Typography>
+        </Box>
+        <Tooltip title="Refresh Dashboard">
+          <IconButton onClick={handleRefresh} color="primary">
+            <RefreshIcon />
+          </IconButton>
+        </Tooltip>
+      </Box>
 
-      <div className="dashboard-stats">
-        <div className="stat-card">
-          <div className="stat-number">{dashboard?.employees?.total || 0}</div>
-          <div className="stat-label">Total Employees</div>
-        </div>
-        
-        <div className="stat-card">
-          <div className="stat-number">{dashboard?.employees?.active || 0}</div>
-          <div className="stat-label">Active Employees</div>
-        </div>
-        
-        <div className="stat-card">
-          <div className="stat-number">{dashboard?.attendance?.averageAttendance || 0}%</div>
-          <div className="stat-label">Average Attendance</div>
-        </div>
-        
-        <div className="stat-card">
-          <div className="stat-number">{dashboard?.performance?.averageQualityScore || 0}</div>
-          <div className="stat-label">Avg Quality Score</div>
-        </div>
-      </div>
-      
-      <div className="dashboard-charts">
-        <AttendanceChart attendanceTrend={dashboard?.attendance?.trend} />
-        <PerformanceChart topPerformers={dashboard?.performance?.topPerformers} />
-      </div>
-      
-      <div className="dashboard-charts">
-        <DepartmentChart departmentData={dashboard?.employees?.byDepartment} />
+      {/* Statistics Cards */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        {statCards.map((stat, index) => (
+          <Grid item xs={12} sm={6} md={3} key={index}>
+            <Card
+              elevation={2}
+              sx={{
+                height: '100%',
+                background: `linear-gradient(135deg, ${stat.bgColor} 0%, rgba(255,255,255,0.9) 100%)`,
+                transition: 'transform 0.2s, box-shadow 0.2s',
+                '&:hover': {
+                  transform: 'translateY(-4px)',
+                  boxShadow: 4
+                }
+              }}
+            >
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Box>
+                    <Typography variant="h3" fontWeight="bold" color={`${stat.color}.main`}>
+                      {stat.value}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                      {stat.title}
+                    </Typography>
+                  </Box>
+                  <Avatar
+                    sx={{
+                      bgcolor: `${stat.color}.main`,
+                      width: 56,
+                      height: 56
+                    }}
+                  >
+                    {stat.icon}
+                  </Avatar>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
+
+      {/* Charts */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid item xs={12} md={6}>
+          <Card elevation={2}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Attendance Trend
+              </Typography>
+              <AttendanceChart attendanceTrend={dashboard?.attendance?.trend} />
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <Card elevation={2}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Top Performers
+              </Typography>
+              <PerformanceChart topPerformers={dashboard?.performance?.topPerformers} />
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid item xs={12} md={6}>
+          <Card elevation={2}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Department Distribution
+              </Typography>
+              <DepartmentChart departmentData={dashboard?.employees?.byDepartment} />
+            </CardContent>
+          </Card>
+        </Grid>
         {user.role === 'HR_ADMIN' && (
-          <PayrollChart departmentCosts={dashboard?.payroll?.departmentCosts} />
+          <Grid item xs={12} md={6}>
+            <Card elevation={2}>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  Payroll by Department
+                </Typography>
+                <PayrollChart departmentCosts={dashboard?.payroll?.departmentCosts} />
+              </CardContent>
+            </Card>
+          </Grid>
         )}
-      </div>
+      </Grid>
 
-      <div className="card">
-        <div className="card-header">
-          <h3 className="card-title">Department Overview</h3>
-        </div>
-        <div className="card-body">
+      {/* Department Overview Table */}
+      <Card elevation={2} sx={{ mb: 4 }}>
+        <CardContent>
+          <Typography variant="h6" gutterBottom>
+            Department Overview
+          </Typography>
           {dashboard?.employees?.byDepartment && Object.keys(dashboard.employees.byDepartment).length > 0 ? (
-            <div className="table-container">
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>Department</th>
-                    <th>Employee Count</th>
-                  </tr>
-                </thead>
-                <tbody>
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell><strong>Department</strong></TableCell>
+                    <TableCell align="right"><strong>Employee Count</strong></TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
                   {Object.entries(dashboard.employees.byDepartment).map(([dept, count]) => (
-                    <tr key={dept}>
-                      <td>{dept}</td>
-                      <td>{count}</td>
-                    </tr>
+                    <TableRow key={dept} hover>
+                      <TableCell>{dept}</TableCell>
+                      <TableCell align="right">
+                        <Chip label={count} color="primary" variant="outlined" />
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
-            </div>
+                </TableBody>
+              </Table>
+            </TableContainer>
           ) : (
-            <p>No department data available</p>
+            <Typography color="text.secondary">No department data available</Typography>
           )}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      <div className="card">
-        <div className="card-header">
-          <h3 className="card-title">Current Month Summary</h3>
-        </div>
-        <div className="card-body">
-          <div className="form-row">
-            <div>
-              <h4>Attendance</h4>
-              <p>Total Records: {dashboard?.attendance?.totalRecords || 0}</p>
-              <p>Present: {dashboard?.attendance?.present || 0}</p>
-              <p>Absent: {dashboard?.attendance?.absent || 0}</p>
-            </div>
-            
-            <div>
-              <h4>Performance</h4>
-              <p>Total Records: {dashboard?.performance?.totalRecords || 0}</p>
-              <p>Avg Calls Handled: {dashboard?.performance?.averageCallsHandled || 0}</p>
-              <p>Avg Adherence: {dashboard?.performance?.averageAdherence || 0}%</p>
-            </div>
-            
-            {user.role === 'HR_ADMIN' && (
-              <div>
-                <h4>Payroll</h4>
-                <p>Processed: {dashboard?.payroll?.totalProcessed || 0}</p>
-                <p>Total Gross: ₹{dashboard?.payroll?.totalGrossSalary?.toLocaleString() || 0}</p>
-                <p>Avg Salary: ₹{dashboard?.payroll?.averageSalary?.toLocaleString() || 0}</p>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+      {/* Summary Cards */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid item xs={12} md={4}>
+          <Card elevation={2}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom color="primary">
+                Attendance Summary
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Typography variant="body2">Total Records:</Typography>
+                  <Typography variant="body2" fontWeight="bold">
+                    {dashboard?.attendance?.totalRecords || 0}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Typography variant="body2">Present:</Typography>
+                  <Typography variant="body2" fontWeight="bold" color="success.main">
+                    {dashboard?.attendance?.present || 0}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Typography variant="body2">Absent:</Typography>
+                  <Typography variant="body2" fontWeight="bold" color="error.main">
+                    {dashboard?.attendance?.absent || 0}
+                  </Typography>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
 
-      <div className="card">
-        <div className="card-header">
-          <h3 className="card-title">Quick Actions</h3>
-        </div>
-        <div className="card-body">
-          <div className="d-flex gap-2">
-            {user.role === 'HR_ADMIN' && (
-              <>
-                <a href="/employees" className="btn btn-primary btn-sm">
-                  Add Employee
-                </a>
-                <a href="/attendance" className="btn btn-secondary btn-sm">
-                  Upload Attendance
-                </a>
-                <a href="/performance" className="btn btn-success btn-sm">
-                  Add Performance
-                </a>
-                <a href="/payroll" className="btn btn-primary btn-sm">
-                  Calculate Payroll
-                </a>
-              </>
-            )}
-            <a href="/reports" className="btn btn-secondary btn-sm">
-              Generate Reports
-            </a>
-          </div>
-        </div>
-      </div>
-    </div>
+        <Grid item xs={12} md={4}>
+          <Card elevation={2}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom color="success">
+                Performance Summary
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Typography variant="body2">Total Records:</Typography>
+                  <Typography variant="body2" fontWeight="bold">
+                    {dashboard?.performance?.totalRecords || 0}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Typography variant="body2">Avg Calls Handled:</Typography>
+                  <Typography variant="body2" fontWeight="bold">
+                    {dashboard?.performance?.averageCallsHandled || 0}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Typography variant="body2">Avg Adherence:</Typography>
+                  <Typography variant="body2" fontWeight="bold">
+                    {dashboard?.performance?.averageAdherence || 0}%
+                  </Typography>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {user.role === 'HR_ADMIN' && (
+          <Grid item xs={12} md={4}>
+            <Card elevation={2}>
+              <CardContent>
+                <Typography variant="h6" gutterBottom color="warning.main">
+                  Payroll Summary
+                </Typography>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <Typography variant="body2">Processed:</Typography>
+                    <Typography variant="body2" fontWeight="bold">
+                      {dashboard?.payroll?.totalProcessed || 0}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <Typography variant="body2">Total Gross:</Typography>
+                    <Typography variant="body2" fontWeight="bold">
+                      ₹{dashboard?.payroll?.totalGrossSalary?.toLocaleString() || 0}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <Typography variant="body2">Avg Salary:</Typography>
+                    <Typography variant="body2" fontWeight="bold">
+                      ₹{dashboard?.payroll?.averageSalary?.toLocaleString() || 0}
+                    </Typography>
+                  </Box>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        )}
+      </Grid>
+
+      {/* Quick Actions */}
+      <Card elevation={2}>
+        <CardContent>
+          <Typography variant="h6" gutterBottom>
+            Quick Actions
+          </Typography>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+            {quickActions.map((action, index) => (
+              <Button
+                key={index}
+                variant="contained"
+                color={action.color}
+                startIcon={action.icon}
+                onClick={() => navigate(action.path)}
+                sx={{
+                  borderRadius: 2,
+                  textTransform: 'none',
+                  fontWeight: 500
+                }}
+              >
+                {action.label}
+              </Button>
+            ))}
+          </Box>
+        </CardContent>
+      </Card>
+    </Box>
   );
 };
 

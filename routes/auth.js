@@ -1,6 +1,6 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
-const db = require('../config/db-config');
+const { User } = require('../models');
 const { 
   auth, 
   generateAccessToken, 
@@ -31,16 +31,19 @@ router.post('/login', async (req, res) => {
     }
 
     // Check if user exists
-    const user = await db.findUserByUsername(username);
+    const user = await User.findByUsername(username);
     if (!user) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
     // Validate password
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await user.validatePassword(password);
     if (!isMatch) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
+
+    // Update last login
+    await user.update({ lastLogin: new Date() });
 
     // Generate tokens
     const accessToken = generateAccessToken(user.id, user.role);

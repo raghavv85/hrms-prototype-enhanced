@@ -5,7 +5,7 @@ const fs = require('fs');
 require('dotenv').config();
 
 // Import database configuration
-const db = require('./config/db-config');
+const { sequelize, syncDatabase, seedDatabase } = require('./models');
 
 const app = express();
 const PORT = process.env.PORT || 5002;
@@ -61,12 +61,35 @@ app.get('/', (req, res) => {
   res.json({ 
     message: 'HRMS Enhanced API Server is running!',
     version: '1.1.0',
-    databaseType: process.env.ENABLE_POSTGRES === 'true' ? 'PostgreSQL' : 'In-Memory'
+    databaseType: process.env.ENABLE_POSTGRES === 'true' ? 'PostgreSQL' : 'SQLite (In-Memory)'
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`HRMS Enhanced Server is running on port ${PORT}`);
-  console.log(`Database: ${process.env.ENABLE_POSTGRES === 'true' ? 'PostgreSQL' : 'In-Memory'}`);
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-});
+// Initialize database and start server
+const startServer = async () => {
+  try {
+    // Test database connection
+    await sequelize.authenticate();
+    console.log('✅ Database connection established successfully.');
+    
+    // Sync database (create tables)
+    await syncDatabase(false); // Set to true to force recreate tables
+    
+    // Seed initial data
+    await seedDatabase();
+    
+    // Start server
+    app.listen(PORT, () => {
+      console.log(`🚀 HRMS Enhanced Server is running on port ${PORT}`);
+      console.log(`📊 Database: ${process.env.ENABLE_POSTGRES === 'true' ? 'PostgreSQL' : 'SQLite (In-Memory)'} with Sequelize`);
+      console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`🔗 API Base URL: http://localhost:${PORT}/api`);
+    });
+  } catch (error) {
+    console.error('❌ Failed to start server:', error);
+    process.exit(1);
+  }
+};
+
+// Start the server
+startServer();

@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const db = require('../config/db-config');
+const { User } = require('../models');
 
 // JWT Configuration
 const JWT_SECRET = process.env.JWT_SECRET || 'hrms_secret_key_2024';
@@ -24,7 +24,7 @@ const auth = async (req, res, next) => {
 
     try {
       const decoded = jwt.verify(token, JWT_SECRET);
-      const user = await db.findUserById(decoded.userId);
+      const user = await User.findByPk(decoded.userId);
       
       if (!user) {
         return res.status(401).json({ message: 'User not found' });
@@ -116,7 +116,7 @@ const refreshToken = async (req, res) => {
   
   try {
     const decoded = jwt.verify(refreshToken, JWT_REFRESH_SECRET);
-    const user = await db.findUserById(decoded.userId);
+    const user = await User.findByPk(decoded.userId);
     
     if (!user) {
       return res.status(403).json({ message: 'User not found' });
