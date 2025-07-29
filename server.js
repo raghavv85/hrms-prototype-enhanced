@@ -48,22 +48,33 @@ app.use('/api/reports', require('./routes/reports'));
 app.use('/api/documents', require('./routes/documents'));
 app.use('/api/notifications', require('./routes/notifications').router);
 
-// Serve static files from React app in production
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, 'client/build')));
-  
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
-  });
-}
-
-app.get('/', (req, res) => {
+// API status route (before static files)
+app.get('/api', (req, res) => {
   res.json({ 
     message: 'HRMS Enhanced API Server is running!',
     version: '1.1.0',
     databaseType: process.env.ENABLE_POSTGRES === 'true' ? 'PostgreSQL' : 'SQLite (In-Memory)'
   });
 });
+
+// Serve static files from React app in production
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, 'client/build')));
+  
+  // Handle React routing, return all requests to React app
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
+  });
+} else {
+  // Development route
+  app.get('/', (req, res) => {
+    res.json({ 
+      message: 'HRMS Enhanced API Server is running!',
+      version: '1.1.0',
+      databaseType: process.env.ENABLE_POSTGRES === 'true' ? 'PostgreSQL' : 'SQLite (In-Memory)'
+    });
+  });
+}
 
 // Initialize database and start server
 const startServer = async () => {
