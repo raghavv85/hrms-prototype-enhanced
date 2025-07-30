@@ -76,7 +76,7 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-// Initialize database and start server
+// Initialize database and start server (for local development)
 const startServer = async () => {
   try {
     // Test database connection
@@ -102,5 +102,22 @@ const startServer = async () => {
   }
 };
 
-// Start the server
-startServer();
+// For Vercel serverless deployment
+if (process.env.VERCEL) {
+  // Initialize database for serverless environment
+  (async () => {
+    try {
+      await sequelize.authenticate();
+      await syncDatabase(false);
+      await seedDatabase();
+      console.log('✅ Database initialized for Vercel serverless environment');
+    } catch (error) {
+      console.error('❌ Database initialization failed:', error);
+    }
+  })();
+} else {
+  // Start the server for local development
+  startServer();
+}
+
+module.exports = app;

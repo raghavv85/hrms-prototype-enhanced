@@ -4,6 +4,13 @@
     {
       "src": "server.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "client/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "client/build"
+      }
     }
   ],
   "routes": [
@@ -12,14 +19,18 @@
       "dest": "/server.js"
     },
     {
+      "src": "/static/(.*)",
+      "dest": "/client/build/static/$1"
+    },
+    {
       "src": "/(.*)",
       "dest": "/server.js"
     }
   ],
   "env": {
     "NODE_ENV": "production",
-    "ENABLE_POSTGRES": "false",
-    "JWT_SECRET": "hrms_jwt_secret_key_2024_enhanced_prototype",
+    "ENABLE_POSTGRES": "true",
+    "VERCEL": "true",
     "PORT": "3000"
   }
 }

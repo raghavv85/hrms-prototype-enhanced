@@ -8,7 +8,8 @@
     "dev": "nodemon server.js",
     "client": "cd client && npm start",
     "server": "nodemon server.js",
-    "build": "cd client && npm run build"
+    "build": "cd client && npm run build",
+    "vercel-build": "cd client && npm install && npm run build"
   },
   "dependencies": {
     "axios": "^1.11.0",
