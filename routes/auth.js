@@ -11,13 +11,6 @@ const {
 
 const router = express.Router();
 
-// Helper function to validate password strength
-const isStrongPassword = (password) => {
-  // At least 8 characters, 1 uppercase, 1 lowercase, 1 number, 1 special character
-  const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])(?=.{8,})/;
-  return strongPasswordRegex.test(password);
-};
-
 // @route   POST /api/auth/login
 // @desc    Login user
 // @access  Public
@@ -57,9 +50,7 @@ router.post('/login', async (req, res) => {
         id: user.id,
         username: user.username,
         role: user.role,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName
+        email: user.email
       }
     });
   } catch (error) {

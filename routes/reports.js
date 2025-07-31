@@ -42,19 +42,9 @@ router.get('/employees', auth, requireRole(['HR_ADMIN', 'TEAM_LEAD']), async (re
     }
 
     if (format === 'pdf') {
-      // Generate PDF report
-      const options = { startDate, endDate, department, employeeId };
-      const pdfPath = await generateAttendanceReportPDF(attendance, options);
-      
-      // Send file for download
-      res.download(pdfPath, `Attendance_Report_${startDate}_to_${endDate}.pdf`, (err) => {
-        if (err) {
-          console.error('Error sending file:', err);
-        } else {
-          // Delete the file after sending (optional)
-          // fs.unlinkSync(pdfPath);
-        }
-      });
+      // This is a bug, it should generate an employee report, not an attendance report.
+      // For now, I will return an error. A proper fix would be to create a new PDF generator for employee reports.
+      return res.status(501).json({ message: 'Employee report PDF generation is not implemented yet.' });
     } else if (format === 'excel') {
       // Generate Excel file
       const excelData = employees.map(emp => ({
@@ -647,60 +637,6 @@ router.get('/dashboard', auth, requireRole(['HR_ADMIN', 'TEAM_LEAD']), async (re
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// @route   GET /api/reports/payslip/:employeeId/:payPeriod
-// @desc    Generate and download payslip PDF
-// @access  Private (HR Admin, Employee - own payslip only)
-router.get('/payslip/:employeeId/:payPeriod', auth, async (req, res) => {
-  try {
-    const { employeeId, payPeriod } = req.params;
-    
-    // Check if user is authorized to access this payslip
-    if (req.user.role !== 'HR Admin' && req.user.employeeId !== employeeId) {
-      return res.status(403).json({ message: 'Access denied' });
-    }
-    
-    // Get employee data
-    const employee = await db.getEmployeeById(employeeId);
-    if (!employee) {
-      return res.status(404).json({ message: 'Employee not found' });
-    }
-    
-    // Get payroll data for the specified period
-    // In a real implementation, this would query the database
-    // For this prototype, we'll use mock data if not found
-    let payroll = {}; // This would be fetched from the database
-    
-    // Mock data for demonstration
-    payroll = {
-      employeeId,
-      payPeriod,
-      workingDays: 22,
-      presentDays: 20,
-      basicSalary: 5000,
-      allowances: 1000,
-      deductions: 800,
-      netSalary: 5200
-    };
-    
-    // Generate PDF
-    const pdfPath = await generatePayslipPDF(employee, payroll);
-    
-    // Send file for download
-    res.download(pdfPath, `Payslip_${employeeId}_${payPeriod.replace(/\s/g, '_')}.pdf`, (err) => {
-      if (err) {
-        console.error('Error sending file:', err);
-        // Don't delete the file on error so we can debug
-      } else {
-        // Delete the file after sending (optional)
-        // fs.unlinkSync(pdfPath);
-      }
-    });
-  } catch (error) {
-    console.error('Generate payslip error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

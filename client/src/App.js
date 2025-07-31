@@ -14,7 +14,7 @@ import muiTheme, { darkTheme } from './theme/muiTheme';
 import './App.css';
 
 // Set up axios defaults
-axios.defaults.baseURL = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:5000';
+axios.defaults.baseURL = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:5002';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -60,6 +60,7 @@ function App() {
                   localStorage.removeItem('token');
                   localStorage.removeItem('refreshToken');
                   delete axios.defaults.headers.common['Authorization'];
+                  setUser(null); // Explicitly log out the user
                 });
             } else {
               localStorage.removeItem('token');

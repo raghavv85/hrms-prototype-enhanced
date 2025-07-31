@@ -62,8 +62,8 @@ const Login = ({ onLogin }) => {
   };
 
   const demoCredentials = [
-    { role: 'HR Admin', username: 'hradmin', password: 'password', color: 'primary' },
-    { role: 'Team Lead', username: 'teamlead', password: 'password', color: 'secondary' }
+    { role: 'HR Admin', username: 'admin', password: 'admin123', color: 'primary' },
+    { role: 'Team Lead', username: 'teamlead', password: 'lead123', color: 'secondary' }
   ];
 
   const handleDemoLogin = (username, password) => {

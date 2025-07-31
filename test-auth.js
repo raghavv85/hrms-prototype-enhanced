@@ -4,9 +4,9 @@ const testAuth = async () => {
   try {
     console.log('Testing authentication...');
     
-    const response = await axios.post('http://localhost:5004/api/auth/login', {
-      username: 'hradmin',
-      password: 'password'
+    const response = await axios.post('http://localhost:5002/api/auth/login', {
+      username: 'admin',
+      password: 'admin123'
     });
     
     console.log('✅ Login successful!');

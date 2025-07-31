@@ -51,23 +51,29 @@ const seedDatabase = async () => {
 
     console.log('🌱 Seeding initial data...');
 
-    // Create default users
-    await User.bulkCreate([
+    // Create default users with proper password hashing
+    const users = [
       {
-        username: 'hradmin',
-        password: 'password', // Will be hashed by the model
+        username: 'admin',
+        password: 'admin123',
         role: 'HR_ADMIN',
-        email: 'hradmin@company.com',
+        email: 'admin@company.com',
         isActive: true
       },
       {
         username: 'teamlead',
-        password: 'password', // Will be hashed by the model
+        password: 'lead123',
         role: 'TEAM_LEAD',
         email: 'teamlead@company.com',
         isActive: true
       }
-    ]);
+    ];
+
+    // Create users individually to trigger hooks
+    for (const userData of users) {
+      await User.create(userData);
+      console.log(`✅ Created user: ${userData.username}`);
+    }
 
     console.log('✅ Initial data seeded successfully.');
   } catch (error) {

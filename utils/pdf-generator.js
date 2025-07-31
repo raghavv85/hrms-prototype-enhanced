@@ -138,8 +138,7 @@ const generatePayslipPDF = async (employee, payroll, outputPath = null) => {
       const deductionsTable = {
         headers: ['Description', 'Amount'],
         rows: [
-          ['Tax', `$${(payroll.deductions * 0.7).toFixed(2)}`],
-          ['Other Deductions', `$${(payroll.deductions * 0.3).toFixed(2)}`]
+          ['Deductions', `$${payroll.deductions.toFixed(2)}`]
         ]
       };
       
