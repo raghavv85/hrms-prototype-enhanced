@@ -6,11 +6,13 @@ module.exports = (sequelize, DataTypes) => {
       autoIncrement: true
     },
     employeeId: {
-      type: DataTypes.STRING(20),
+      type: DataTypes.STRING(10),
       allowNull: false,
       unique: true,
       validate: {
-        notEmpty: true
+        notEmpty: true,
+        isNumeric: true,
+        len: [10, 10]
       }
     },
     name: {
@@ -21,90 +23,81 @@ module.exports = (sequelize, DataTypes) => {
         len: [2, 100]
       }
     },
-    email: {
+    supervisorName: {
       type: DataTypes.STRING(100),
-      allowNull: false,
-      unique: true,
-      validate: {
-        isEmail: true
-      }
-    },
-    phone: {
-      type: DataTypes.STRING(15),
       allowNull: true,
-      validate: {
-        is: /^[\+]?[1-9][\d]{0,15}$/
-      }
     },
-    department: {
-      type: DataTypes.STRING(50),
-      allowNull: false,
-      validate: {
-        notEmpty: true
-      }
+    unitHead: {
+      type: DataTypes.STRING(100),
+      allowNull: true,
     },
-    designation: {
-      type: DataTypes.STRING(50),
-      allowNull: false,
-      validate: {
-        notEmpty: true
-      }
+    state: {
+      type: DataTypes.STRING(100),
+      allowNull: true,
     },
-    dateOfJoining: {
+    location: {
+      type: DataTypes.STRING(100),
+      allowNull: true,
+    },
+    subLocation: {
+      type: DataTypes.STRING(100),
+      allowNull: true,
+    },
+    doj: {
       type: DataTypes.DATEONLY,
       allowNull: false,
       validate: {
         isDate: true,
-        isBefore: new Date().toISOString().split('T')[0]
       }
     },
-    salary: {
+    gender: {
+      type: DataTypes.STRING(50),
+      allowNull: true,
+    },
+    newOld: {
+      type: DataTypes.STRING(50),
+      allowNull: true,
+    },
+    designation: {
+      type: DataTypes.STRING(100),
+      allowNull: true,
+    },
+    dra: {
+      type: DataTypes.STRING(100),
+      allowNull: true,
+    },
+    fieldFloor: {
+      type: DataTypes.STRING(100),
+      allowNull: true,
+    },
+    portfolioCode: {
+      type: DataTypes.STRING(100),
+      allowNull: true,
+    },
+    client: {
+      type: DataTypes.STRING(100),
+      allowNull: true,
+    },
+    product: {
+      type: DataTypes.STRING(100),
+      allowNull: true,
+    },
+    process: {
+      type: DataTypes.STRING(100),
+      allowNull: true,
+    },
+    status: {
+      type: DataTypes.ENUM('Active', 'Inactive'),
+      allowNull: false,
+      defaultValue: 'Active'
+    },
+    ctc: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
       validate: {
         min: 0,
         isDecimal: true
       }
-    },
-    status: {
-      type: DataTypes.ENUM('ACTIVE', 'INACTIVE', 'TERMINATED'),
-      allowNull: false,
-      defaultValue: 'ACTIVE'
-    },
-    address: {
-      type: DataTypes.TEXT,
-      allowNull: true
-    },
-    emergencyContact: {
-      type: DataTypes.JSONB,
-      allowNull: true,
-      validate: {
-        isValidEmergencyContact(value) {
-          if (value && typeof value === 'object') {
-            if (!value.name || !value.phone) {
-              throw new Error('Emergency contact must have name and phone');
-            }
-          }
-        }
-      }
-    },
-    bankDetails: {
-      type: DataTypes.JSONB,
-      allowNull: true,
-      validate: {
-        isValidBankDetails(value) {
-          if (value && typeof value === 'object') {
-            if (!value.accountNumber || !value.bankName) {
-              throw new Error('Bank details must have account number and bank name');
-            }
-          }
-        }
-      }
-    },
-    documents: {
-      type: DataTypes.JSONB,
-      allowNull: true,
-      defaultValue: {}
     },
     createdAt: {
       type: DataTypes.DATE,
@@ -123,20 +116,10 @@ module.exports = (sequelize, DataTypes) => {
         fields: ['employeeId']
       },
       {
-        unique: true,
-        fields: ['email']
-      },
-      {
-        fields: ['department']
-      },
-      {
-        fields: ['designation']
-      },
-      {
         fields: ['status']
       },
       {
-        fields: ['dateOfJoining']
+        fields: ['doj']
       }
     ]
   });
@@ -147,17 +130,19 @@ module.exports = (sequelize, DataTypes) => {
   };
 
   Employee.prototype.isActive = function() {
-    return this.status === 'ACTIVE';
+    return this.status === 'Active';
   };
 
-  Employee.prototype.calculateTenure = function() {
-    const joinDate = new Date(this.dateOfJoining);
+  Employee.prototype.calculateVintage = function() {
+    const joinDate = new Date(this.doj);
     const currentDate = new Date();
-    const diffTime = Math.abs(currentDate - joinDate);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    const years = Math.floor(diffDays / 365);
-    const months = Math.floor((diffDays % 365) / 30);
-    return { years, months, totalDays: diffDays };
+    let years = currentDate.getFullYear() - joinDate.getFullYear();
+    let months = currentDate.getMonth() - joinDate.getMonth();
+    if (months < 0 || (months === 0 && currentDate.getDate() < joinDate.getDate())) {
+      years--;
+      months += 12;
+    }
+    return { years, months };
   };
 
   // Class methods
@@ -167,33 +152,10 @@ module.exports = (sequelize, DataTypes) => {
     });
   };
 
-  Employee.findByDepartment = function(department) {
-    return this.findAll({
-      where: { department, status: 'ACTIVE' }
-    });
-  };
-
   Employee.findActiveEmployees = function() {
     return this.findAll({
-      where: { status: 'ACTIVE' }
+      where: { status: 'Active' }
     });
-  };
-
-  Employee.getDepartmentStats = async function() {
-    const stats = await this.findAll({
-      attributes: [
-        'department',
-        [sequelize.fn('COUNT', sequelize.col('id')), 'count']
-      ],
-      where: { status: 'ACTIVE' },
-      group: ['department'],
-      raw: true
-    });
-    
-    return stats.reduce((acc, stat) => {
-      acc[stat.department] = parseInt(stat.count);
-      return acc;
-    }, {});
   };
 
   return Employee;
